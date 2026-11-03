@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>リーダー診断 大学生・持ち出し</title>
+<style>
+/* 見本：大学生版（授業で班・クラスまで）と 持ち出し版（送らない）。新しいクラスは頭に dk- */
+:root{
+  --ink:#24302a; --mute:#56605a; --line:#d5ddd6; --soft:#f4f7f3; --bg:#ffffff;
+  --green:#33693a; --green-soft:#e8f1e6;
+  --p:#b4452a; --p-soft:#fbece7;
+  --m:#3c6890; --m-soft:#e8eff6;
+  --star:#8a5600; --gap:#8a5600; --gap-soft:#fdf3e1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Hiragino Sans","BIZ UDPGothic","Noto Sans JP",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.dk-app{max-width:1000px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 16px}
+.dk-top{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);flex:none}
+.dk-top h1{font-size:16px;margin:0;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-tag{font-size:14px;padding:2px 10px;border-radius:12px;background:var(--green-soft);color:var(--green);font-weight:700;white-space:nowrap}
+.dk-main{flex:1;padding:12px 0 14px;display:flex;flex-direction:column;min-height:0}
+.dk-view{display:none;flex:1;flex-direction:column;gap:10px;min-height:0}
+.dk-view.dk-on{display:flex}
+.dk-h{font-size:20px;font-weight:800;margin:0;line-height:1.35}
+.dk-sub{font-size:14px;color:var(--mute);margin:0}
+.dk-btn{min-height:48px;padding:0 22px;border-radius:24px;border:2px solid var(--green);background:var(--green);color:#fff;font-weight:800;font-size:16px}
+.dk-btn.dk-ghost{background:#fff;color:var(--green)}
+.dk-btn:disabled{opacity:.45;cursor:default}
+.dk-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dk-end{margin-top:auto;display:flex;gap:10px;justify-content:space-between;align-items:center;padding-top:6px}
+.dk-panel{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff}
+.dk-back{min-height:44px;min-width:44px;border:0;background:none;color:var(--green);font-weight:800;font-size:15px;padding:0 6px}
+
+/* 入口 */
+.dk-doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;align-content:center}
+.dk-door{border:1px solid var(--line);border-radius:18px;background:#fff;padding:20px;text-align:left;display:flex;flex-direction:column;gap:8px;min-height:220px}
+.dk-door:hover{border-color:var(--green)}
+.dk-door .dk-ic{font-size:34px;line-height:1}
+.dk-door b{font-size:20px}
+.dk-door span{font-size:15px;color:var(--mute)}
+.dk-door ul{margin:4px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink)}
+
+/* はじめ */
+.dk-form{display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center;max-width:520px}
+.dk-form label{font-weight:700;font-size:15px}
+.dk-form select,.dk-form input{min-height:44px;border:1px solid #9aa59d;border-radius:10px;padding:0 12px;font-size:16px;background:#fff;width:100%}
+.dk-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dk-seg button{min-height:44px;padding:0 16px;border:1px solid #9aa59d;border-radius:22px;background:#fff;font-size:15px}
+.dk-seg button[aria-pressed="true"]{border:2px solid var(--green);background:var(--green-soft);font-weight:800}
+
+/* 質問 */
+.dk-prog{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--mute)}
+.dk-bar{flex:1;height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.dk-bar i{display:block;height:100%;background:var(--green)}
+.dk-qs{display:flex;flex-direction:column;gap:8px}
+.dk-q{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0 8px}
+.dk-q p{margin:0;font-size:16px;font-weight:700}
+.dk-ch{display:flex;gap:6px}
+.dk-ch button{min-height:44px;min-width:76px;padding:0 6px;border:1px solid #9aa59d;border-radius:10px;background:#fff;font-size:14px;line-height:1.2}
+.dk-ch button[aria-pressed="true"]{border:2px solid var(--green);background:var(--green-soft);font-weight:800}
+.dk-ch button[aria-pressed="true"]::before{content:"✓ "}
+
+/* 8マス */
+.dk-res{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;flex:1;min-height:0}
+.dk-masu{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-content:start}
+.dk-masu .dk-ph{font-size:14px;font-weight:800;text-align:center;padding:2px 0}
+.dk-masu .dk-ph.dk-P{color:var(--p)} .dk-masu .dk-ph.dk-M{color:var(--m)}
+.dk-masu .dk-pos{font-size:14px;font-weight:800;align-self:center;padding-right:4px;white-space:nowrap}
+.dk-cell{border:1px solid var(--line);border-radius:10px;padding:5px 8px;min-height:50px;display:flex;flex-direction:column;justify-content:center;gap:3px;background:#fff}
+.dk-cell .dk-nm{font-size:14px;font-weight:700;line-height:1.25}
+.dk-cell .dk-sc{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.dk-cell .dk-sc i{display:block;height:100%}
+.dk-cell.dk-P .dk-sc i{background:var(--p)} .dk-cell.dk-M .dk-sc i{background:var(--m)}
+.dk-cell .dk-num{font-size:14px;color:var(--mute)}
+.dk-cell.dk-top1{border:2px solid var(--star);background:#fffaf0}
+.dk-cell.dk-top1 .dk-nm::before{content:"★ ";color:var(--star)}
+.dk-me{display:flex;flex-direction:column;gap:8px;min-height:0}
+.dk-me .dk-type{font-size:22px;font-weight:800;margin:0}
+.dk-me textarea{width:100%;min-height:72px;border:1px solid #9aa59d;border-radius:10px;padding:8px 10px;font-size:16px;resize:vertical}
+
+/* 見わたす（クラス・学級） */
+.dk-look{display:grid;grid-template-columns:1fr 260px;gap:16px;flex:1;min-height:0}
+.dk-hans{display:flex;gap:6px;flex-wrap:wrap}
+.dk-hans button{min-height:44px;min-width:56px;padding:0 12px;border:1px solid #9aa59d;border-radius:22px;background:#fff;font-size:15px}
+.dk-hans button[aria-pressed="true"]{border:2px solid var(--green);background:var(--green-soft);font-weight:800}
+.dk-cell.dk-gap{border:2px dashed var(--gap);background:var(--gap-soft)}
+.dk-cell .dk-who{font-size:14px;font-weight:800}
+.dk-cell.dk-gap .dk-who{color:var(--gap)}
+button.dk-cell{text-align:left;cursor:pointer;font:inherit;color:inherit;min-height:56px}
+.dk-note{font-size:14px;color:var(--mute)}
+.dk-list{margin:0;padding-left:1.2em;font-size:15px}
+.dk-list li{margin:2px 0}
+.dk-check{display:flex;flex-direction:column;gap:6px}
+.dk-check label{display:flex;gap:10px;align-items:center;min-height:44px;font-size:15px;border-bottom:1px solid var(--line)}
+.dk-check input{width:24px;height:24px;flex:none;accent-color:var(--green)}
+.dk-flow{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:15px;margin:0}
+.dk-flow dt{font-weight:800;color:var(--green);white-space:nowrap}
+.dk-flow dd{margin:0}
+.dk-sent{border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:8px 10px;font-size:14px;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;margin:0;max-height:180px;overflow:auto}
+.dk-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;min-height:0}
+.dk-set{display:flex;flex-direction:column;gap:8px;align-content:start}
+.dk-set input{min-height:44px;border:1px solid #9aa59d;border-radius:10px;padding:0 12px;font-size:16px;width:100%;background:#fff}
+.dk-err{margin:0;padding:8px 12px;border-radius:10px;background:#fdecea;color:#9b1c1c;font-weight:700;font-size:15px}
+.dk-err a{color:#9b1c1c}
+.dk-ok{color:var(--green);font-weight:800}
+#dkSendErr[hidden],#dkTeacher[hidden],#dkLookKai[hidden]{display:none!important}
+
+/* 印刷：めざす自分カード */
+.dk-card{display:none}
+@media print{
+  .dk-app{display:none}
+  .dk-card{display:block;border:2px solid #333;border-radius:14px;padding:20px;margin:20px;font-size:18px}
+  .dk-card h2{margin:0 0 8px}
+}
+
+@media (max-width:720px){
+  .dk-doors,.dk-res,.dk-look,.dk-two{grid-template-columns:1fr}
+  .dk-q{grid-template-columns:1fr}
+  .dk-ch button{flex:1;min-width:0}
+  .dk-door{min-height:0}
+}
+</style>
+</head>
+<body>
+<div class="dk-app">
+  <header class="dk-top">
+    <button class="dk-back" id="dkHome" hidden aria-label="入口へもどる">← 入口</button>
+    <h1 id="dkTitle">リーダー診断</h1>
+    <span class="dk-tag" id="dkTag" hidden></span>
+  </header>
+  <main class="dk-main">
+
+    <!-- 入口 -->
+    <section class="dk-view dk-on" id="v-door">
+      <div class="dk-doors">
+        <button class="dk-door" data-go="dai">
+          <span class="dk-ic" aria-hidden="true">🎓</span>
+          <b>大学の授業で使う</b>
+          <span>大学生が自分を診断し、班・クラスの すきま を見る</span>
+          <ul><li>32問（大学生のことば）→ 8マス</li><li>大学の先生のフォームへ送る（名前なし）</li><li>先生：班・クラスの すきま</li></ul>
+        </button>
+        <button class="dk-door" data-go="mochi">
+          <span class="dk-ic" aria-hidden="true">🎒</span>
+          <b>学校へ持って行く</b>
+          <span>インターン・ボランティア先で、子どもと使う</span>
+          <ul><li>子どもの答えは どこにも送らない</li><li>めざす自分カードを印刷</li><li>班・学級の すきま は その場で数える</li></ul>
+        </button>
+      </div>
+    </section>
+
+    <!-- 持ち出し：進める人へ -->
+    <section class="dk-view" id="v-guide">
+      <h2 class="dk-h">学校で使う前に</h2>
+      <div class="dk-two">
+        <div class="dk-panel">
+          <p class="dk-sub" style="margin-bottom:6px">学校の先生と たしかめること</p>
+          <div class="dk-check" id="dkChecks">
+            <label><input type="checkbox">担任の先生に、使ってよいか きいた</label>
+            <label><input type="checkbox">子どもの端末で開けるか、前に ためした</label>
+            <label><input type="checkbox">カードを印刷するか、きいた</label>
+            <label><input type="checkbox">子どもの名前・写真・答えを 持ち帰らない</label>
+          </div>
+          <p class="dk-note" style="margin-top:8px">この画面は<b>何も送りません</b>。閉じると、答えは消えます。</p>
+        </div>
+        <div class="dk-panel">
+          <p class="dk-sub" style="margin-bottom:6px">45分の流れ（6年の指導案から）</p>
+          <dl class="dk-flow">
+            <dt>つかむ 5分</dt><dd>山登りの絵で、4つの場所と P・M を知る</dd>
+            <dt>さぐる 15分</dt><dd>① 自分を診断 → ② 班 → ③ 学級の すきま</dd>
+            <dt>見つける 15分</dt><dd>すきまを うめる動きを 班で考える</dd>
+            <dt>決める 10分</dt><dd>めざす自分を 1文で書き、カードにする</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" data-go="look">③ みんなで見る（進める人）</button>
+        <button class="dk-btn" data-go="start">① 子どもの診断を はじめる</button>
+      </div>
+    </section>
+
+    <!-- はじめ -->
+    <section class="dk-view" id="v-start">
+      <h2 class="dk-h" id="dkStartH">はじめに</h2>
+      <p class="dk-sub" id="dkStartSub"></p>
+      <div class="dk-form" id="dkStartForm"></div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkTeacher">先生用</button>
+        <button class="dk-btn" id="dkStartGo">質問へ</button>
+      </div>
+    </section>
+
+    <!-- 質問 -->
+    <section class="dk-view" id="v-q">
+      <div class="dk-prog"><span id="dkPg"></span><div class="dk-bar"><i id="dkPgBar"></i></div></div>
+      <p class="dk-sub" id="dkQLead"></p>
+      <div class="dk-qs" id="dkQs"></div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkPrev">もどる</button>
+        <button class="dk-btn" id="dkNext">つぎへ</button>
+      </div>
+    </section>
+
+    <!-- 結果 -->
+    <section class="dk-view" id="v-res">
+      <div class="dk-res">
+        <div>
+          <p class="dk-sub" style="margin-bottom:4px" id="dkResLead"></p>
+          <div class="dk-masu" id="dkMasu"></div>
+        </div>
+        <div class="dk-me">
+          <p class="dk-sub" id="dkMeLead"></p>
+          <p class="dk-type" id="dkType"></p>
+          <p style="margin:0;font-size:15px" id="dkTypeDs"></p>
+          <label for="dkGoal" style="font-weight:800;font-size:15px" id="dkGoalLbl"></label>
+          <textarea id="dkGoal"></textarea>
+        </div>
+      </div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkResBack">質問を見なおす</button>
+        <button class="dk-btn" id="dkResGo"></button>
+      </div>
+    </section>
+
+    <!-- 大学：送る -->
+    <section class="dk-view" id="v-send">
+      <h2 class="dk-h">先生のフォームへ送る</h2>
+      <p class="dk-sub">送るのは 下の中身だけです。<b>名前・メールは送りません。</b></p>
+      <pre class="dk-sent" id="dkSent"></pre>
+      <p class="dk-note" id="dkSendNote"></p>
+      <p class="dk-err" id="dkSendErr" role="alert" hidden></p>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkSendBack">結果へもどる</button>
+        <button class="dk-btn" id="dkSendGo">送る</button>
+      </div>
+    </section>
+
+    <!-- 大学：先生用の設定 -->
+    <section class="dk-view" id="v-set">
+      <h2 class="dk-h">先生用：フォームとつなぐ</h2>
+      <div class="dk-two">
+        <div class="dk-panel dk-set">
+          <label for="dkPre"><b>1. 事前入力リンク</b>を はる</label>
+          <input id="dkPre" placeholder="https://docs.google.com/forms/d/e/…/viewform?usp=pp_url&amp;entry.…">
+          <div class="dk-row"><button class="dk-btn dk-ghost" id="dkPreGo">読みこむ</button><span id="dkPreMsg" class="dk-note"></span></div>
+          <label for="dkShare"><b>2. 学生に配るリンク</b></label>
+          <input id="dkShare" readonly placeholder="1. のあとに出ます">
+          <div class="dk-row"><button class="dk-btn dk-ghost" id="dkShareCopy" disabled>コピー</button></div>
+        </div>
+        <div class="dk-panel dk-set">
+          <b>3. 回答を見る</b>
+          <p class="dk-note" style="margin:0">回答のスプレッドシート →［ファイル］→［ダウンロード］→［カンマ区切り形式（.csv）］</p>
+          <div class="dk-row"><button class="dk-btn dk-ghost" id="dkCsvBtn">CSV を読みこむ</button><span id="dkCsvMsg" class="dk-note"></span></div>
+          <input type="file" id="dkCsv" accept=".csv,text/csv" hidden>
+          <p class="dk-note" style="margin:0">読みこんだ回答は、この画面の中だけで使います。どこにも送りません。</p>
+        </div>
+      </div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkSetBack">もどる</button>
+        <button class="dk-btn" id="dkSetLook">クラスのすがた へ</button>
+      </div>
+    </section>
+
+    <!-- 見わたす -->
+    <section class="dk-view" id="v-look">
+      <div class="dk-row" style="justify-content:space-between">
+        <h2 class="dk-h" id="dkLookH"></h2>
+        <div class="dk-seg" id="dkLookKai"></div>
+        <div class="dk-hans" id="dkHans"></div>
+      </div>
+      <div class="dk-look">
+        <div class="dk-masu" id="dkLookMasu"></div>
+        <div class="dk-panel">
+          <p style="margin:0 0 6px;font-weight:800" id="dkGapH"></p>
+          <ul class="dk-list" id="dkGapList"></ul>
+          <p class="dk-note" id="dkLookNote" style="margin-top:8px"></p>
+        </div>
+      </div>
+      <div class="dk-end">
+        <button class="dk-btn dk-ghost" id="dkLookBack">もどる</button>
+        <button class="dk-btn dk-ghost" id="dkLookClear" hidden>この班を 0にもどす</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+<div class="dk-card" id="dkCard"></div>
+
+<script>
+/* ============ 決まり（ここだけ） ============ */
+/* ==部品== */
+var MASU = ["全体P","全体M","前P","前M","真ん中P","真ん中M","後ろP","後ろM"];
+/* 大学生版のフォームの質問（7問・すべて記述式）。事前入力リンクを作るとき、各質問に k の字を入れてもらう */
+var FORM_KEYS = [{k:"kai",name:"回"},{k:"han",name:"班"},{k:"ban",name:"番号"},{k:"top",name:"いまのあなた"},
+  {k:"score",name:"得点"},{k:"ans",name:"答え"},{k:"goal",name:"めざす自分"}];
+
+/* 事前入力リンク → 送り先と、どの entry がどの質問か。フォームのリンクでなければ null */
+function parsePrefill(url){
+  var mm = String(url||"").trim().match(/^https:\/\/docs\.google\.com\/forms\/(?:u\/[0-9]+\/)?d\/e\/([^\/?#]+)\/viewform\??([^#]*)/);
+  if(!mm) return null;
+  var map = {};
+  mm[2].split("&").forEach(function(p){
+    var kv = p.split("="); if(!/^entry\.[0-9]+$/.test(kv[0])) return;
+    var v = decodeURIComponent((kv[1]||"").replace(/\+/g," ")).trim().toLowerCase();
+    FORM_KEYS.forEach(function(f){ if(f.k===v) map[f.k] = kv[0]; });
+  });
+  return { action:"https://docs.google.com/forms/d/e/"+mm[1]+"/formResponse", map:map,
+    missing: FORM_KEYS.filter(function(f){ return !map[f.k]; }).map(function(f){ return f.name; }) };
+}
+/* 送る中身（決めた7問だけ。名前・メールは入れない） */
+function formBody(map, vals){
+  return FORM_KEYS.filter(function(f){ return map[f.k]; }).map(function(f){
+    return encodeURIComponent(map[f.k])+"="+encodeURIComponent(vals[f.k]==null?"":String(vals[f.k]));
+  }).join("&");
+}
+/* CSV（スプレッドシートからダウンロードしたもの）→ 行の配列 */
+function parseCSV(text){
+  var rows=[], row=[], cell="", q=false, s=String(text||"").replace(/^﻿/,"");
+  for(var i=0;i<s.length;i++){
+    var c=s[i];
+    if(q){ if(c==='"'){ if(s[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&s[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=""; }
+    else cell+=c;
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+/* 回と班でしぼって、マスごとの★の人数。同じ班・番号の同じ回は あとの回答を使う。han=0 はクラス全体 */
+function classTally(rows, kai, han){
+  var head = (rows[0]||[]).map(function(h){ return String(h).trim(); });
+  var col = {}; ["回","班","番号","いまのあなた"].forEach(function(n){ col[n]=head.indexOf(n); });
+  var lack = Object.keys(col).filter(function(n){ return col[n]<0; });
+  if(lack.length) return {error:"列が見つかりません："+lack.join("・"), count:{}, people:0, hans:[]};
+  var last = {}, hans = {};
+  rows.slice(1).forEach(function(r){
+    if(String(r[col["回"]]||"").trim()!==kai) return;
+    var h = String(r[col["班"]]||"").trim(); if(h) hans[h]=1;
+    if(han && h!==String(han)) return;
+    last[h+"-"+String(r[col["番号"]]||"").trim()] = String(r[col["いまのあなた"]]||"");
+  });
+  var count = {}; MASU.forEach(function(m){ count[m]=0; });
+  Object.keys(last).forEach(function(k){
+    last[k].split(/[・、,\s]+/).forEach(function(m){ if(m in count) count[m]++; });
+  });
+  return {error:"", count:count, people:Object.keys(last).length,
+    hans:Object.keys(hans).sort(function(a,b){ return (+a)-(+b); })};
+}
+/* 配るリンク：フォームの設定を # のうしろに付ける（# はサーバに送られない） */
+function shareLink(base, prefill){ return String(base).split("#")[0]+"#f="+encodeURIComponent(prefill); }
+function readShare(hash){ var mm=String(hash||"").match(/^#?f=(.+)$/); return mm ? decodeURIComponent(mm[1]) : ""; }
+/* ==/部品== */
+var POS = ["全体","前","真ん中","後ろ"];
+
+/* 対象ごとの ことば。質問・タイプ名・画面の文は ここから出す */
+var TAISHO = {
+  dai: {
+    title: "リーダー診断（大学生）", tag: "大学の授業",
+    choices: [{v:4,t:"とても あてはまる"},{v:3,t:"あてはまる"},{v:2,t:"あまり あてはまらない"},{v:1,t:"あてはまらない"}],
+    lead: "ゼミ・グループワーク・サークルなど、ふだんのチームでの自分を思いうかべて答えてください。",
+    pos: {"全体":"全体を見わたす","前":"先頭","真ん中":"真ん中","後ろ":"うしろ"},
+    showNum: true,
+    items: {
+      "全体P":["チームの進み具合を、ゴールとの距離でとらえている","ゴールまでに必要な作業や資源を洗い出せる","作業の順番や優先順位を決められる","締め切りから逆算して、全体の進め方を組み立てられる"],
+      "全体M":["メンバーそれぞれの得意や持ち味を知っている","誰がどの役割に合うかを考えて提案できる","一部の人に負担がかたよらないよう、関わり方を工夫できる","メンバーの力が活きるように、役割分担を見直せる"],
+      "前P":["誰も動かない場面で、最初に口火を切れる","決めきれない場面で「まずやってみよう」と決断をうながせる","行き詰まったとき、打開のきっかけになる行動をとれる","むずかしい状況でも、メンバーが安心して動けるよう率先して示せる"],
+      "前M":["メンバーの強みを見つけ、言葉にして伝えられる","「一緒にやろう」と声をかけ、相手の一歩を後押しできる","相手の考えや思いを引き出す問いかけができる","メンバーが「やってみたい」と思える関わり方ができる"],
+      "真ん中P":["進捗を確かめ、次にやることを整理して共有できる","並行して進む作業をつなぎ、チームとしてかみ合うよう調整できる","作業量やペースを見て、無理のない計画に組み直せる","役割や進め方をふり返り、必要に応じて修正を提案できる"],
+      "真ん中M":["メンバーの表情や様子の変化に気づける","発言しにくそうな人に、話すきっかけをつくれる","ちがう意見や気持ちを整理し、つなぎ直せる","誰もが安心して発言できる雰囲気をつくれる"],
+      "後ろP":["自分にできることを見つけて、チームを支えられる","準備・記録・フォローなど、目立たない仕事を引き受けられる","困っているメンバーに気づき、必要なサポートができる","チームの目標を理解し、その実現に向けて裏方として支えられる"],
+      "後ろM":["うまくいかなかったメンバーの気持ちに寄りそえる","結果だけでなく、努力や過程を認める言葉をかけられる","落ちこんだメンバーが「もう一度やろう」と思えるよう励ませる","相手のペースや状態に合わせて、再挑戦を支えられる"]
+    },
+    type: {
+      "全体P":["見通しをつくる人","ゴールまでの道すじを組み立て、チームに地図を出せる。"],
+      "全体M":["役割をデザインする人","一人ひとりの持ち味を見て、力が活きる分担を考えられる。"],
+      "前P":["最初に動く人","止まった場面で口火を切り、行動で示せる。"],
+      "前M":["一歩を後押しする人","相手の強みを言葉にして、「やってみたい」を引き出せる。"],
+      "真ん中P":["段取りをつなぐ人","ばらばらの作業をつなぎ、チームの流れを整えられる。"],
+      "真ん中M":["場をつくる人","様子の変化に気づき、安心して話せる場をつくれる。"],
+      "後ろP":["土台を支える人","目立たない仕事を引き受け、みんなが動きやすい状態をつくれる。"],
+      "後ろM":["再挑戦を支える人","うまくいかなかった人に寄りそい、もう一度に向かわせられる。"]
+    },
+    goalLbl: "めざす自分（次の授業・チームで やってみること）",
+    goalPh: "例）話し合いが止まったら、論点を1行にまとめて出す"
+  },
+  mochi: {
+    title: "リーダー診断", tag: "学校で使う（送らない）",
+    choices: [{v:4,t:"とても あてはまる"},{v:3,t:"あてはまる"},{v:2,t:"あまり あてはまらない"},{v:1,t:"あてはまらない"}],
+    lead: "学校や 班での 自分を 思いうかべて えらんでね。",
+    pos: {"全体":"全体","前":"前","真ん中":"真ん中","後ろ":"後ろ"},
+    showNum: false,
+    items: {
+      "全体P":["今どこまで進んでいるかを考えることができる","ゴールまでに何が必要かを整理することができる","やることの順番や優先順位を考えることができる","全体の流れを見通して、進め方を考えることができる"],
+      "全体M":["一人一人の得意なことや良さに気づくことができる","誰がどの役割に合いそうかを考えることができる","偏りが出ないように、みんなが関われる形を考えることができる","それぞれの力が活きるように、役割や関わり方を調整することができる"],
+      "前P":["誰も動いていないときに、自分から一歩踏み出すことができる","「じゃあやってみよう」と決断して動き始めることができる","迷っている場面で、前に進むきっかけとなる行動ができる","困難な状況でも仲間を守りながら、安心して動ける姿を示すことができる"],
+      "前M":["相手のよさや強みに気づき、言葉にして伝えることができる","「一緒にやってみよう」と声をかけ、最初の一歩を後押しできる","相手の考えや気持ちを引き出すような問いかけができる","その人らしく動けるように関わり、「やってみたい」と思える状態をつくることができる"],
+      "真ん中P":["進度を確認し、「次に何をするか」を整理することができる","バラバラに進んでいる仕事をつなぎ、全体として動くように整えることができる","タスクの量やスピードを見て、無理のない進め方に調整することができる","進み具合や役割を見直し、必要に応じて再調整や提案ができる"],
+      "真ん中M":["一人一人の様子（表情・気持ち・体調など）に気づくことができる","困っている人や、話しにくそうな人に声をかけることができる","人の意見や気持ちをつなぎ、分かりやすくつなぎ直すことができる","安心して話せる関係をつくることができる"],
+      "後ろP":["自分からできることを見つけて、周りを支えることができる","みんなが動きやすくなるように、準備やフォローができる","誰かが困っているときに気づき、必要なサポートができる","みんなのやりたいことや目標を理解し、それが実現するように支えることができる"],
+      "後ろM":["うまくいかなかった人の気持ちに寄り添うことができる","努力や過程を認め、安心できる言葉をかけることができる","「もう一回やってみようかな」と思えるように勇気づけることができる","その人のペースや状態に合わせて、再び挑戦できる状態をつくることができる"]
+    },
+    type: {
+      "全体P":["見通しマスター","ゴールまでの道すじを整理できる人。"],
+      "全体M":["役わりデザイナー","一人ひとりの得意によく気づく人。"],
+      "前P":["一歩めスターター","だれも動いていないときに、自分から動き出せる人。"],
+      "前M":["やる気の火つけ役","友だちのよさを見つけて、言葉にできる人。"],
+      "真ん中P":["段取りつなぎ役","バラバラの仕事をつなげられる人。"],
+      "真ん中M":["空気づくりの名人","人の表情や気持ちの変化に気づける人。"],
+      "後ろP":["縁の下の力もち","自分からできることを見つけて動ける人。"],
+      "後ろM":["勇気づけ名人","うまくいかなかった人の気持ちに寄りそえる人。"]
+    },
+    goalLbl: "めざす自分（これから やってみること）",
+    goalPh: "例）話し合いで だまっている子に「どう思う？」ときく"
+  }
+};
+/* 出す順：1画面に P・M と場所がまざる（だれでも同じ順） */
+var ORDER = (function(){ var o=[], mix=[0,3,4,7,1,2,5,6]; for(var i=0;i<4;i++) mix.forEach(function(m){ o.push({masu:MASU[m], i:i}); }); return o; })();
+var PER = 4;
+
+/* 大学の授業の 見本データ（CSV を読みこむ前だけ使う・にせ） */
+var SAMPLE_ROWS = (function(){
+  var tops=["全体P","前P","真ん中M","後ろP","前P","真ん中M","全体P","後ろM","真ん中P","前M","真ん中M","後ろP","前P","全体M","真ん中M","後ろP","全体P","真ん中M","後ろM","前P","真ん中P","真ん中M","後ろP","前M"];
+  return [["回","班","番号","いまのあなた"]].concat(tops.map(function(t,k){ return ["事前", String((k%6)+1), String(k+1), t]; }));
+})();
+
+/* ============ 状態 ============ */
+var S = { mode:null, page:0, ans:{}, kai:"事前", han:"", ban:"", lookHan:0, lookKai:"事前", tally:{}, csv:null };
+/* フォームの設定：配るリンク（#f=）＞ この端末に保存 の順。決めるのはここだけ */
+var PRE_KEY = "leaderDaiPrefill_v1";
+var FORM = (function(){
+  var p = readShare(location.hash);
+  if(!p){ try{ p = localStorage.getItem(PRE_KEY) || ""; }catch(e){} }
+  return { prefill:p, f:parsePrefill(p) };
+})();
+function formReady(){ return !!(FORM.f && FORM.f.missing.length===0); }
+function T(){ return TAISHO[S.mode]; }
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function key(o){ return o.masu+"-"+o.i; }
+
+function show(v){
+  document.querySelectorAll(".dk-view").forEach(function(e){ e.classList.toggle("dk-on", e.id==="v-"+v); });
+  $("dkHome").hidden = (v==="door");
+  $("dkTitle").textContent = S.mode ? T().title : "リーダー診断";
+  $("dkTag").hidden = !S.mode; if(S.mode) $("dkTag").textContent = T().tag;
+  window.scrollTo(0,0);
+}
+
+/* ============ 入口・案内 ============ */
+document.addEventListener("click", function(e){
+  var b = e.target.closest("[data-go]"); if(!b) return;
+  var g = b.getAttribute("data-go");
+  if(g==="dai"){ S.mode="dai"; S.ans={}; S.page=0; renderStart(); show("start"); }
+  else if(g==="mochi"){ S.mode="mochi"; S.ans={}; S.page=0; show("guide"); }
+  else if(g==="start"){ S.ans={}; S.page=0; renderStart(); show("start"); }
+  else if(g==="look"){ S.lookHan=0; renderLook(); show("look"); }
+});
+$("dkHome").onclick = function(){ S.mode=null; show("door"); };
+
+function renderStart(){
+  var f = $("dkStartForm");
+  if(S.mode==="dai"){
+    $("dkStartH").textContent = "はじめに";
+    $("dkStartSub").textContent = "名前は書きません。先生が配った 班と番号 で送ります。";
+    f.innerHTML =
+      '<label>回</label><div class="dk-seg" id="dkKai">'+["事前","事後"].map(function(k){return '<button type="button" aria-pressed="'+(S.kai===k)+'">'+k+'</button>';}).join("")+'</div>'+
+      '<label for="dkHan">班</label><select id="dkHan"><option value="">えらぶ</option>'+[1,2,3,4,5,6,7,8].map(function(n){return '<option'+(String(n)===S.han?' selected':'')+'>'+n+'</option>';}).join("")+'</select>'+
+      '<label for="dkBan">番号</label><input id="dkBan" inputmode="numeric" placeholder="先生が配った番号" value="'+esc(S.ban)+'">';
+    f.querySelectorAll("#dkKai button").forEach(function(b){ b.onclick=function(){ S.kai=b.textContent; renderStart(); }; });
+    $("dkHan").onchange=function(){ S.han=this.value; };
+    $("dkBan").oninput=function(){ S.ban=this.value; };
+    $("dkTeacher").hidden = false;
+  }else{
+    $("dkTeacher").hidden = true;
+    $("dkStartH").textContent = "リーダー診断を はじめよう";
+    $("dkStartSub").textContent = "32の 質問に こたえると、きみの とくいな リーダーシップが 分かるよ。名前は 書かないよ。";
+    f.innerHTML = "";
+  }
+}
+$("dkStartGo").onclick = function(){ S.page=0; renderQ(); show("q"); };
+
+/* ============ 質問 ============ */
+function renderQ(){
+  var t=T(), n=ORDER.length/PER;
+  $("dkPg").textContent = (S.page+1)+" / "+n;
+  $("dkPgBar").style.width = ((S.page+1)/n*100)+"%";
+  $("dkQLead").textContent = t.lead;
+  var qs = ORDER.slice(S.page*PER, S.page*PER+PER);
+  $("dkQs").innerHTML = qs.map(function(o){
+    var k=key(o);
+    return '<div class="dk-q"><p>'+esc(t.items[o.masu][o.i])+'</p><div class="dk-ch" role="group">'+
+      t.choices.map(function(c){ return '<button type="button" data-k="'+k+'" data-v="'+c.v+'" aria-pressed="'+(S.ans[k]===c.v)+'">'+c.t+'</button>'; }).join("")+
+      '</div></div>';
+  }).join("");
+  $("dkQs").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ S.ans[b.dataset.k]=+b.dataset.v; renderQ(); }; });
+  var done = qs.every(function(o){ return S.ans[key(o)]; });
+  $("dkNext").disabled = !done;
+  $("dkNext").textContent = (S.page===n-1) ? "結果を見る" : "つぎへ";
+  $("dkPrev").textContent = S.page===0 ? "はじめへ" : "もどる";
+}
+$("dkPrev").onclick = function(){ if(S.page===0){ show("start"); } else { S.page--; renderQ(); } };
+$("dkNext").onclick = function(){ if(S.page<ORDER.length/PER-1){ S.page++; renderQ(); } else { renderRes(); show("res"); } };
+
+/* ============ 結果 ============ */
+function scores(){
+  var sc={}; MASU.forEach(function(m){ var s=0; for(var i=0;i<4;i++) s+=S.ans[m+"-"+i]||0; sc[m]=s/4; }); return sc;
+}
+function tops(sc){ var mx=Math.max.apply(null,MASU.map(function(m){return sc[m];})); return MASU.filter(function(m){return sc[m]===mx;}); }
+function masuGrid(cell){
+  var h='<span></span><span class="dk-ph dk-P">▲ P やりとげる</span><span class="dk-ph dk-M">● M 大切にする</span>';
+  POS.forEach(function(p){ h+='<span class="dk-pos">'+esc(T().pos[p])+'</span>'+cell(p+"P","P")+cell(p+"M","M"); });
+  return h;
+}
+function renderRes(){
+  var t=T(), sc=scores(), tp=tops(sc);
+  $("dkResLead").textContent = t.showNum ? "8マスの 得点（1〜4・各4問の平均）" : "きみの 8マス（長いほど とくい）";
+  $("dkMasu").innerHTML = masuGrid(function(m,pm){
+    return '<div class="dk-cell dk-'+pm+(tp.indexOf(m)>=0?' dk-top1':'')+'"><span class="dk-nm">'+esc(t.type[m][0])+'</span>'+
+      '<span class="dk-sc"><i style="width:'+((sc[m]-1)/3*100)+'%"></i></span>'+
+      (t.showNum?'<span class="dk-num">'+sc[m].toFixed(2)+'</span>':'')+'</div>';
+  });
+  $("dkMeLead").textContent = t.showNum ? "いまの あなた（★）" : "いまの きみ（★）";
+  $("dkType").textContent = tp.map(function(m){return t.type[m][0];}).join("・");
+  $("dkTypeDs").textContent = t.type[tp[0]][1];
+  $("dkGoalLbl").textContent = t.goalLbl;
+  $("dkGoal").placeholder = t.goalPh;
+  $("dkResGo").textContent = S.mode==="dai" ? "先生に送る" : "カードを印刷";
+}
+$("dkResBack").onclick = function(){ S.page=0; renderQ(); show("q"); };
+$("dkResGo").onclick = function(){
+  if(S.mode==="dai"){ renderSend(); show("send"); return; }
+  var t=T(), tp=tops(scores());
+  $("dkCard").innerHTML = '<h2>めざす自分</h2><p>いまの わたし：<b>'+esc(tp.map(function(m){return t.type[m][0];}).join("・"))+'</b></p><p>'+esc($("dkGoal").value||"")+'</p>';
+  window.print();
+};
+
+/* ============ 大学：送る ============ */
+/* 送る値は ここで1回だけ作り、画面の表示と送信の両方に使う */
+function sendVals(){
+  var sc=scores();
+  return { kai:S.kai, han:S.han, ban:S.ban, top:tops(sc).join("・"),
+    score:MASU.map(function(m){ return sc[m].toFixed(2); }).join(","),
+    ans:ORDER.map(function(o){ return S.ans[key(o)]; }).join(","),
+    goal:$("dkGoal").value||"" };
+}
+function renderSend(){
+  var v=sendVals();
+  $("dkSent").textContent = FORM_KEYS.map(function(f){
+    return f.name+"："+(f.k==="score" ? MASU.map(function(m,i){ return m+" "+v.score.split(",")[i]; }).join("　") : (v[f.k]||"（なし）"));
+  }).join("\n");
+  var miss = !S.han || !S.ban;
+  $("dkSendNote").textContent = !formReady() ? "送り先が まだ決まっていません。先生から配られたリンクで開いてください。"
+    : (miss ? "班と番号を 入れてから 送ってください（はじめの画面）。" : "");
+  $("dkSendErr").hidden = true;
+  $("dkSendGo").disabled = !formReady() || miss;
+  $("dkSendGo").textContent = "送る";
+}
+$("dkSendBack").onclick = function(){ show("res"); };
+$("dkSendGo").onclick = function(){
+  var b=this, body=formBody(FORM.f.map, sendVals());
+  b.disabled = true; b.textContent = "送っています…";
+  /* Google フォームは返事を読ませないので、届かなかったときだけ分かる。そのときはフォームで送る道を出す */
+  fetch(FORM.f.action, {method:"POST", mode:"no-cors", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:body})
+    .then(function(){ b.textContent = "✓ 送りました"; $("dkSendNote").innerHTML = '<span class="dk-ok">✓ 送りました。</span>この画面は閉じて だいじょうぶです。'; })
+    .catch(function(){
+      b.disabled = false; b.textContent = "もう一度 送る";
+      var e=$("dkSendErr"); e.hidden=false;
+      e.innerHTML = '送れませんでした（ネットにつながっていないかもしれません）。<a target="_blank" rel="noopener" href="'+esc(FORM.f.action.replace(/formResponse$/,"viewform")+"?usp=pp_url&"+body)+'">フォームを開いて送る</a>';
+    });
+};
+
+/* ============ 大学：先生用 ============ */
+$("dkTeacher").onclick = function(){ renderSet(); show("set"); };
+$("dkSetBack").onclick = function(){ renderStart(); show("start"); };
+$("dkSetLook").onclick = function(){ S.lookHan=0; renderLook(); show("look"); };
+function renderSet(){
+  $("dkPre").value = FORM.prefill;
+  var f=FORM.f;
+  $("dkPreMsg").innerHTML = !FORM.prefill ? "" : (!f ? "フォームのリンクでは ないようです"
+    : (f.missing.length ? "足りない質問："+esc(f.missing.join("・")) : '<span class="dk-ok">✓ つながりました</span>'));
+  $("dkShare").value = formReady() ? shareLink(location.href, FORM.prefill) : "";
+  $("dkShareCopy").disabled = !formReady();
+  $("dkCsvMsg").innerHTML = S.csv ? '<span class="dk-ok">✓ '+(S.csv.length-1)+'件 読みこみました</span>' : "";
+}
+$("dkPreGo").onclick = function(){
+  FORM.prefill = $("dkPre").value.trim(); FORM.f = parsePrefill(FORM.prefill);
+  if(formReady()){ try{ localStorage.setItem(PRE_KEY, FORM.prefill); }catch(e){} }
+  renderSet();
+};
+$("dkShareCopy").onclick = function(){
+  var b=this; $("dkShare").select();
+  (navigator.clipboard ? navigator.clipboard.writeText($("dkShare").value) : Promise.reject())
+    .catch(function(){ document.execCommand("copy"); })
+    .then(function(){ b.textContent="✓ コピーしました"; setTimeout(function(){ b.textContent="コピー"; },1500); });
+};
+$("dkCsvBtn").onclick = function(){ $("dkCsv").click(); };
+$("dkCsv").onchange = function(){
+  var file=this.files[0]; if(!file) return;
+  var r=new FileReader();
+  r.onload=function(){
+    var rows=parseCSV(r.result), chk=classTally(rows,"事前",0);
+    if(chk.error){ S.csv=null; $("dkCsvMsg").textContent = "読めませんでした："+chk.error; return; }
+    S.csv=rows; renderSet();
+  };
+  r.onerror=function(){ $("dkCsvMsg").textContent="読めませんでした"; };
+  r.readAsText(file,"utf-8");
+};
+
+/* ============ 見わたす ============ */
+/* 大学：フォームの CSV（見本は にせデータ）から 班・クラスの★を数える
+   持ち出し：進める人が その場で「いる」をタップ。どこにも送らない・閉じると消える */
+function renderLook(){
+  var dai = S.mode==="dai", t=T();
+  var tal = dai ? classTally(S.csv||SAMPLE_ROWS, S.lookKai, S.lookHan) : null;
+  var hans = dai ? classTally(S.csv||SAMPLE_ROWS, S.lookKai, 0).hans.map(Number) : [1,2,3,4,5,6,7,8];
+  $("dkLookH").textContent = dai ? "クラスのすがた" : "③ みんなで見る";
+  $("dkLookKai").hidden = !dai;
+  $("dkLookKai").innerHTML = ["事前","事後"].map(function(k){ return '<button type="button" aria-pressed="'+(S.lookKai===k)+'">'+k+'</button>'; }).join("");
+  $("dkLookKai").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ S.lookKai=b.textContent; S.lookHan=0; renderLook(); }; });
+  $("dkHans").innerHTML = ['<button type="button" data-h="0" aria-pressed="'+(S.lookHan===0)+'">'+(dai?"クラス":"学級")+'</button>']
+    .concat(hans.map(function(h){ return '<button type="button" data-h="'+h+'" aria-pressed="'+(S.lookHan===h)+'">'+h+'班</button>'; })).join("");
+  $("dkHans").querySelectorAll("button").forEach(function(b){ b.onclick=function(){ S.lookHan=+b.dataset.h; renderLook(); }; });
+
+  var has={};   /* 大学：人数／持ち出し：いる か いないか */
+  MASU.forEach(function(m){
+    if(dai){ has[m]=tal.count[m]; }
+    else if(S.lookHan===0){ has[m]=hans.some(function(h){ return S.tally[h+"-"+m]; }) ? 1 : 0; }
+    else { has[m]=S.tally[S.lookHan+"-"+m] ? 1 : 0; }
+  });
+  var tap = !dai && S.lookHan!==0;
+  $("dkLookMasu").innerHTML = masuGrid(function(m,pm){
+    var gap = !has[m];
+    var who = gap ? "すきま" : (dai ? has[m]+"人" : "✓ いる");
+    var tag = tap ? 'button type="button" data-m="'+m+'" aria-pressed="'+(!gap)+'"' : "div";
+    return '<'+tag+' class="dk-cell dk-'+pm+(gap?' dk-gap':'')+'"><span class="dk-nm">'+esc(t.type[m][0])+'</span><span class="dk-who">'+who+'</span></'+(tap?"button":"div")+'>';
+  });
+  if(tap) $("dkLookMasu").querySelectorAll("button[data-m]").forEach(function(b){ b.onclick=function(){ var k=S.lookHan+"-"+b.dataset.m; S.tally[k]=!S.tally[k]; renderLook(); }; });
+
+  var gaps = MASU.filter(function(m){ return !has[m]; });
+  $("dkGapH").textContent = gaps.length ? "すきま（だれも ★ がない所）" : "すきまは ありません";
+  $("dkGapList").innerHTML = gaps.map(function(m){ return '<li>'+esc(t.pos[m.slice(0,-1)])+'・'+m.slice(-1)+'：'+esc(t.type[m][0])+'</li>'; }).join("");
+  $("dkLookNote").textContent = dai
+    ? (S.csv ? S.lookKai+"に答えた人："+tal.people+"人。同じ人が2回送ったときは、あとの回答を使います。"
+             : "いまは 見本の にせデータです。「先生用」で 回答の CSV を読みこむと、本物になります。")
+    : (S.lookHan===0
+        ? "班を えらんで、★の子に 手を あげてもらい、いる所を タップ。学級は 班を 合わせて 出ます。何も送らず、閉じると消えます。"
+        : "★の子に 手を あげてもらい、いる所を タップ（もう一度で もどる）。");
+  $("dkLookClear").hidden = !tap;
+}
+$("dkLookBack").onclick = function(){ if(S.mode==="dai"){ renderSet(); show("set"); } else show("guide"); };
+$("dkLookClear").onclick = function(){ MASU.forEach(function(m){ delete S.tally[S.lookHan+"-"+m]; }); renderLook(); };
+</script>
+</body>
+</html>
